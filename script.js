@@ -5,6 +5,7 @@ import { Octree } from 'three/examples/jsm/math/Octree.js';
 import { OctreeHelper } from 'three/examples/jsm/helpers/OctreeHelper.js';
 import { TextureLoader } from 'three';
 
+
 // --- Basic THREE.js Setup ---
 const canvas = document.querySelector('canvas.webgl');
 const scene = new THREE.Scene();
@@ -54,7 +55,7 @@ scene.add(dirLight);
 const worldOctree = new Octree();
 const loader = new GLTFLoader();
 
-const matcapTexture = new TextureLoader().load('material/12719.jpg');
+const matcapTexture = new TextureLoader().load('material/images.jpeg');
 
 loader.load(
     'models/map.glb',
@@ -64,9 +65,15 @@ loader.load(
 
         model.traverse(child => {
             if (child.isMesh) {
-                console.log('Mesh name:', child.name);
+                console.log('Mesh name:', child.name, '+', child.position);
                 if (child.name === 'rock') {
                     child.material = new THREE.MeshMatcapMaterial({ matcap: matcapTexture });
+                }
+                if (child.name === 'rock001') {
+                    child.material = new THREE.MeshMatcapMaterial({ matcap: matcapTexture });
+                }
+                if (child.name === 'eurica') {
+                    child.add(sound)
                 }
                 child.castShadow = true;
                 child.receiveShadow = true;
@@ -78,9 +85,9 @@ loader.load(
         });
 
         // Optional: Visualize the octree for debugging
-        const helper = new OctreeHelper(worldOctree);
-        helper.visible = true;
-        scene.add(helper);
+        // const helper = new OctreeHelper(worldOctree);
+        // helper.visible = true;
+        // scene.add(helper);
 
         // Teleport player after the map has loaded
         playerCollider.start.set(0, 1, 0);
@@ -95,6 +102,97 @@ loader.load(
         console.error('An error happened while loading the model:', error);
     }
 );
+
+
+// --- Positional audio --- //
+// create an AudioListener and add it to the camera
+const listener = new THREE.AudioListener();
+camera.add( listener );
+
+// create the PositionalAudio object (passing in the listener)
+const sound = new THREE.PositionalAudio( listener );
+
+const audioLoader = new THREE.AudioLoader();
+audioLoader.load( '/sounds/chair.mp3', function( buffer ) {
+    sound.setBuffer( buffer );
+    sound.setLoop( true );
+    sound.setVolume( 2 );
+    sound.setRefDistance( 1.0 );
+    // sound.play();
+});
+
+// Audio Recroder
+const audioContext = listener.context;
+const destination = audioContext.createMediaStreamDestination();
+
+listener.gain.connect(destination);
+listener.gain.connect(audioContext.destination);
+
+const mediaRecorder = new MediaRecorder(destination.stream);
+
+let allChunks = [];
+
+function startRecording() {
+  if (mediaRecorder.state === 'inactive') {
+    allChunks = []; // Clear previous recording
+    mediaRecorder.start();
+    console.log('Recording started');
+  } else if (mediaRecorder.state === 'paused') {
+    mediaRecorder.resume();
+    console.log('Recording resumed');
+  } else {
+    console.log('Already recording');
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder.state === 'recording') {
+    mediaRecorder.pause();
+    console.log('Recording paused (still accumulating in same file)');
+  } else {
+    console.log('Recorder not recording');
+  }
+}
+
+function finalizeRecording() {
+  if (mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+    console.log('Recording stopped (finalized)');
+  }
+}
+
+function downloadRecording() {
+  if (allChunks.length === 0) {
+    console.log('No audio data to download');
+    return;
+  }
+  const audioBlob = new Blob(allChunks, { type: 'audio/webm' });
+  const audioURL = URL.createObjectURL(audioBlob);
+
+  const a = document.createElement('a');
+  a.style.display = 'none';
+  a.href = audioURL;
+  a.download = 'game-audio.webm';
+  document.body.appendChild(a);
+  a.click();
+  URL.revokeObjectURL(audioURL);
+
+  console.log('Audio downloaded');
+}
+
+// Listen for final chunk
+mediaRecorder.ondataavailable = (e) => {
+  if (e.data.size > 0) {
+    allChunks.push(e.data);
+  }
+};
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'r') startRecording();       // r: start or resume
+  if (e.key === 'p') stopRecording();        // p: pause
+  if (e.key === 'f') finalizeRecording();    // f: stop & finalize
+  if (e.key === 'g') downloadRecording();    // g: download
+});
 
 
 // --- Player Controller ---
@@ -124,6 +222,7 @@ const bobAmplitude = 0.1; // How high the bob goes
 
 // Pointer lock for first-person view
 document.addEventListener('mousedown', () => {
+    sound.play()
     document.body.requestPointerLock();
     mouseTime = performance.now();
 });
