@@ -7,9 +7,14 @@ import { TextureLoader } from 'three';
 
 
 const canvas = document.querySelector('canvas.webgl');
+
+const blocker = document.getElementById('blocker');
+const instructions = document.getElementById('instructions');
+
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x88ccee);
-scene.fog = new THREE.Fog(0x88ccee, 0, 50);
+scene.background = new THREE.Color('#262837');
+const fog = new THREE.Fog('#262837', 5, 30)
+scene.fog = fog
 
 const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.rotation.order = 'YXZ';
@@ -27,15 +32,17 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 
 
 // --- Lighting ---
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
 scene.add(ambientLight);
 
-const fillLight = new THREE.DirectionalLight(0xffffff, 0.7);
-fillLight.position.set(-10, 10, 5);
-scene.add(fillLight);
+// const fillLight = new THREE.DirectionalLight(0xffffff, 0.1);
+// fillLight.position.set(-10, 10, 5);
+// scene.add(fillLight);
 
 const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
 dirLight.position.set(10, 20, 10);
+const helper = new THREE.DirectionalLightHelper( dirLight, 5 );
+scene.add( helper );
 dirLight.castShadow = true;
 // --- Shadow Property Adjustments ---
 dirLight.shadow.mapSize.width = 512;
@@ -51,8 +58,28 @@ scene.add(dirLight);
 
 
 // --- World & Collision Setup ---
+
+const manager = new THREE.LoadingManager(
+    () => {
+	
+		const loadingScreen = document.getElementById( 'loading-screen' );
+		loadingScreen.classList.add( 'fade-out' );
+		
+		// optional: remove loader from DOM via event listener
+		loadingScreen.addEventListener( 'transitionend', onTransitionEnd );
+		
+	}
+);
+
+function onTransitionEnd( event ) {
+
+	event.target.remove();
+	
+}
+
+
 const worldOctree = new Octree();
-const loader = new GLTFLoader();
+const loader = new GLTFLoader(manager);
 
 const matcapTexture = new TextureLoader().load('material/images.jpeg');
 
@@ -254,7 +281,8 @@ loader.load(
         
         // Rotate the model on Z axis
         recorderModel.rotation.z = Math.PI * 0.1; // 18 degrees rotation
-        
+        recorderModel.rotation.x = Math.PI * 0.25; 
+        recorderModel.scale.set(0.75, 0.75, 0.75);
         console.log('Recorder model loaded successfully');
     },
     undefined, // onProgress callback (optional)
@@ -299,6 +327,19 @@ document.addEventListener('keyup', (event) => {
 });
 
 window.addEventListener('resize', onWindowResize);
+
+// Handle pointer lock state changes
+document.addEventListener('pointerlockchange', () => {
+    if (document.pointerLockElement === document.body) {
+        // Controls are locked
+        instructions.style.display = 'none';
+        blocker.style.display = 'none';
+    } else {
+        // Controls are unlocked
+        blocker.style.display = 'block';
+        instructions.style.display = '';
+    }
+});
 
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
