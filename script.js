@@ -6,7 +6,6 @@ import { OctreeHelper } from 'three/examples/jsm/helpers/OctreeHelper.js';
 import { TextureLoader } from 'three';
 
 
-// --- Basic THREE.js Setup ---
 const canvas = document.querySelector('canvas.webgl');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x88ccee);
@@ -14,6 +13,7 @@ scene.fog = new THREE.Fog(0x88ccee, 0, 50);
 
 const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.rotation.order = 'YXZ';
+scene.add(camera);
 
 const renderer = new THREE.WebGLRenderer({
     canvas: canvas,
@@ -38,10 +38,9 @@ const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
 dirLight.position.set(10, 20, 10);
 dirLight.castShadow = true;
 // --- Shadow Property Adjustments ---
-// Increased shadow map resolution for better quality
-dirLight.shadow.mapSize.width = 2048;
-dirLight.shadow.mapSize.height = 2048;
-// Expanded the shadow camera frustum to cover a larger area
+dirLight.shadow.mapSize.width = 512;
+dirLight.shadow.mapSize.height = 512;
+
 dirLight.shadow.camera.top = 30;
 dirLight.shadow.camera.bottom = -30;
 dirLight.shadow.camera.left = -30;
@@ -56,6 +55,7 @@ const worldOctree = new Octree();
 const loader = new GLTFLoader();
 
 const matcapTexture = new TextureLoader().load('material/images.jpeg');
+
 
 loader.load(
     'models/map.glb',
@@ -105,7 +105,6 @@ loader.load(
 
 
 // --- Positional audio --- //
-// create an AudioListener and add it to the camera
 const listener = new THREE.AudioListener();
 camera.add( listener );
 
@@ -113,13 +112,16 @@ camera.add( listener );
 const sound = new THREE.PositionalAudio( listener );
 
 const audioLoader = new THREE.AudioLoader();
-audioLoader.load( '/sounds/chair.mp3', function( buffer ) {
-    sound.setBuffer( buffer );
-    sound.setLoop( true );
-    sound.setVolume( 2 );
-    sound.setRefDistance( 1.0 );
-    // sound.play();
-});
+audioLoader.load( 
+    'sounds/chair.mp3', 
+    function( buffer ) {
+        sound.setBuffer( buffer );
+        sound.setLoop( true );
+        sound.setVolume( 2 );
+        sound.setRefDistance( 1.0 );
+        console.log('Audio loaded successfully');
+    }
+);
 
 // Audio Recroder
 const audioContext = listener.context;
@@ -136,9 +138,11 @@ function startRecording() {
   if (mediaRecorder.state === 'inactive') {
     allChunks = []; // Clear previous recording
     mediaRecorder.start();
+    isRecorderVisible = true; // Show recorder
     console.log('Recording started');
   } else if (mediaRecorder.state === 'paused') {
     mediaRecorder.resume();
+    isRecorderVisible = true; // Show recorder
     console.log('Recording resumed');
   } else {
     console.log('Already recording');
@@ -148,6 +152,7 @@ function startRecording() {
 function stopRecording() {
   if (mediaRecorder.state === 'recording') {
     mediaRecorder.pause();
+    isRecorderVisible = false; // Hide recorder
     console.log('Recording paused (still accumulating in same file)');
   } else {
     console.log('Recorder not recording');
@@ -213,16 +218,65 @@ let mouseTime = 0;
 
 const keyStates = {};
 
-// --- Realistic Walking Variables ---
+// --- Walking Variables ---
 let bobTime = 0;
 const bobFrequency = 5.5; // How many bobs per second
 const bobAmplitude = 0.1; // How high the bob goes
+
+
+// --- Recorder Model Setup ---
+let recorderModel = null; // Will hold the loaded GLB model
+
+// Recorder animation state
+let isRecorderVisible = false;
+let recorderAnimationProgress = 0;
+const recorderHiddenPosition = { x: 0.5, y: -2, z: -1 }; // Hidden below view
+const recorderVisiblePosition = { x: 0.5, y: -0.5, z: -1 }; // In hand position
+const recorderAnimationSpeed = 9; // Speed of show/hide animation
+
+// Load recorder GLB model
+loader.load(
+    'models/recorder.glb',
+    (gltf) => {
+        recorderModel = gltf.scene;
+        
+        // Setup model properties
+        recorderModel.traverse(child => {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
+        
+        // Add to camera and set initial position (hidden)
+        camera.add(recorderModel);
+        recorderModel.position.set(recorderHiddenPosition.x, recorderHiddenPosition.y, recorderHiddenPosition.z);
+        
+        // Rotate the model on Z axis
+        recorderModel.rotation.z = Math.PI * 0.1; // 18 degrees rotation
+        
+        console.log('Recorder model loaded successfully');
+    },
+    undefined, // onProgress callback (optional)
+    (error) => {
+        console.error('Error loading recorder model:', error);
+        // Fallback to cube mesh if model fails to load
+    }
+);
+
 
 // --- Event Listeners for Controls ---
 
 // Pointer lock for first-person view
 document.addEventListener('mousedown', () => {
-    sound.play()
+    // Resume audio context if suspended
+    if (listener.context.state === 'suspended') {
+        listener.context.resume();
+    }
+    
+    if (!sound.isPlaying) {
+        sound.play();
+    }
     document.body.requestPointerLock();
     mouseTime = performance.now();
 });
@@ -287,8 +341,29 @@ function updatePlayer(deltaTime) {
         const bobOffset = Math.sin(bobTime) * bobAmplitude;
         camera.position.y += bobOffset;
     } else {
-        bobTime = 0; // Reset bob time when stationary
+        bobTime = 0; // Reset bob
     }
+}
+
+function updateRecorderAnimation(deltaTime) {
+    if (!recorderModel) return;
+    
+    // Update animation progress based on visibility state
+    if (isRecorderVisible) {
+        recorderAnimationProgress = Math.min(1, recorderAnimationProgress + deltaTime * recorderAnimationSpeed);
+    } else {
+        recorderAnimationProgress = Math.max(0, recorderAnimationProgress - deltaTime * recorderAnimationSpeed);
+    }
+    
+    // Smooth interpolation between hidden and visible positions using easing
+    const easeInOut = recorderAnimationProgress < 0.5 
+        ? 2 * recorderAnimationProgress * recorderAnimationProgress 
+        : 1 - Math.pow(-2 * recorderAnimationProgress + 2, 2) / 2;
+    
+    // Interpolate position
+    recorderModel.position.x = recorderHiddenPosition.x + (recorderVisiblePosition.x - recorderHiddenPosition.x) * easeInOut;
+    recorderModel.position.y = recorderHiddenPosition.y + (recorderVisiblePosition.y - recorderHiddenPosition.y) * easeInOut;
+    recorderModel.position.z = recorderHiddenPosition.z + (recorderVisiblePosition.z - recorderHiddenPosition.z) * easeInOut;
 }
 
 
@@ -341,6 +416,9 @@ function animate() {
         controls(deltaTime);
         updatePlayer(deltaTime);
     }
+    
+    // Update recorder animation
+    updateRecorderAnimation(deltaTime);
 
     renderer.render(scene, camera);
     requestAnimationFrame(animate)
