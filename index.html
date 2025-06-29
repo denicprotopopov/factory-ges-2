@@ -10,6 +10,14 @@
 <body>
     <canvas class="webgl"></canvas>
     
+    <!-- Recording controls - always visible in top left -->
+    <div id="recording-controls" style="position: fixed; top: 20px; left: 20px; color: white; font-family: monospace; font-size: 14px; z-index: 1000; background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 5px;">
+r: запись<br/>
+                p: пауза<br/>
+                f: завершить запись<br/>
+                g: скачать<br/>
+    </div>
+    
     <script type="module" src="./script.js"></script>
 
     <section id="loading-screen">
@@ -23,15 +31,22 @@
             <p style="font-size:72px">
                 Labor in Question
             </p>
-            <p>For the best experience use a Chromium-based or Firefox browser.</p>
+            <p>Для наилучшего опыта используйте браузер на базе Chromium или Firefox.</p>
             <p style="font-size:30px">
-                Press left mouse button to start
+                Нажмите левую кнопку мыши, чтобы начать
             </p>
+            <br/>
             <p>
-                Move: WASD<br/>
-                Look around: Mouse<br/>
-                Click an object to save it<br/>
-                Press Y, to open and close the inventory<br/>
+                Движение: WASD<br/>
+                Осмотр: Мышь<br/>
+                <br/>
+                <br/>
+                Команды для записи звука:<br/>
+                r: запись<br/>
+                p: пауза<br/>
+                f: завершить запись<br/>
+                g: скачать<br/>
+
 
             </p>
             

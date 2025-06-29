@@ -4,16 +4,19 @@ import { Capsule } from 'three/examples/jsm/math/Capsule.js';
 import { Octree } from 'three/examples/jsm/math/Octree.js';
 import { OctreeHelper } from 'three/examples/jsm/helpers/OctreeHelper.js';
 import { TextureLoader } from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPixelatedPass } from 'three/addons/postprocessing/RenderPixelatedPass.js';
 
 
 const canvas = document.querySelector('canvas.webgl');
 
 const blocker = document.getElementById('blocker');
 const instructions = document.getElementById('instructions');
+const recordingControls = document.getElementById('recording-controls');
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#262837');
-const fog = new THREE.Fog('#262837', 5, 30)
+const fog = new THREE.Fog('#262837', 5, 50)
 scene.fog = fog
 
 const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -30,19 +33,27 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.VSMShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 
+// --- Post-processing ---
+const composer = new EffectComposer(renderer);
+const renderPixelatedPass = new RenderPixelatedPass(7, scene, camera);
+renderPixelatedPass.normalEdgeStrength = 0;
+renderPixelatedPass.depthEdgeStrength = 0;
+composer.addPass(renderPixelatedPass);
+
 
 // --- Lighting ---
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
 scene.add(ambientLight);
 
 // const fillLight = new THREE.DirectionalLight(0xffffff, 0.1);
 // fillLight.position.set(-10, 10, 5);
 // scene.add(fillLight);
 
-const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+const dirLight = new THREE.DirectionalLight(0xffffff, 2.5);
 dirLight.position.set(10, 20, 10);
-const helper = new THREE.DirectionalLightHelper( dirLight, 5 );
-scene.add( helper );
+dirLight.target.position.set(0, 0, 0); // Light the center area
+// const helper = new THREE.DirectionalLightHelper( dirLight, 5 );
+// scene.add( helper );
 dirLight.castShadow = true;
 // --- Shadow Property Adjustments ---
 dirLight.shadow.mapSize.width = 512;
@@ -55,6 +66,40 @@ dirLight.shadow.camera.right = 30;
 dirLight.shadow.camera.near = 0.1;
 dirLight.shadow.camera.far = 200;
 scene.add(dirLight);
+
+// Additional Directional Light 2 - Light the left side
+const dirLight2 = new THREE.DirectionalLight(0xffffff, 1.8);
+dirLight2.position.set(-15, 15, -10);
+dirLight2.target.position.set(-10, 0, -5); // Light the left area
+// const helper2 = new THREE.DirectionalLightHelper(dirLight2, 5);
+// scene.add(helper2);
+dirLight2.castShadow = true;
+dirLight2.shadow.mapSize.width = 512;
+dirLight2.shadow.mapSize.height = 512;
+dirLight2.shadow.camera.top = 20;
+dirLight2.shadow.camera.bottom = -20;
+dirLight2.shadow.camera.left = -20;
+dirLight2.shadow.camera.right = 20;
+dirLight2.shadow.camera.near = 0.1;
+dirLight2.shadow.camera.far = 150;
+scene.add(dirLight2);
+
+// Additional Directional Light 3 - Light the right side
+const dirLight3 = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight3.position.set(35, 25, -15);
+dirLight3.target.position.set(10, 0, -8); // Light the right area
+// const helper3 = new THREE.DirectionalLightHelper(dirLight3, 5);
+// scene.add(helper3);
+dirLight3.castShadow = true;
+dirLight3.shadow.mapSize.width = 512;
+dirLight3.shadow.mapSize.height = 512;
+dirLight3.shadow.camera.top = 25;
+dirLight3.shadow.camera.bottom = -25;
+dirLight3.shadow.camera.left = -25;
+dirLight3.shadow.camera.right = 25;
+dirLight3.shadow.camera.near = 0.1;
+dirLight3.shadow.camera.far = 180;
+scene.add(dirLight3);
 
 
 // --- World & Collision Setup ---
@@ -100,7 +145,27 @@ loader.load(
                     child.material = new THREE.MeshMatcapMaterial({ matcap: matcapTexture });
                 }
                 if (child.name === 'eurica') {
-                    child.add(sound)
+                    child.add(zavodSound1);
+                }
+
+                if (child.name === 'typewriter') {
+                    child.add(zavodSound2);
+                }
+
+                if (child.name === 'tractor') {
+                    child.add(zavodSound3);
+                }
+
+                if (child.name === 'kulman') {
+                    child.add(zavodSound4);
+                }
+
+                if (child.name === 'flag') {
+                    child.add(zavodSound5);
+                }
+
+                if (child.name === 'corner') {
+                    child.add(zavodSound6);
                 }
                 child.castShadow = true;
                 child.receiveShadow = true;
@@ -136,17 +201,131 @@ const listener = new THREE.AudioListener();
 camera.add( listener );
 
 // create the PositionalAudio object (passing in the listener)
-const sound = new THREE.PositionalAudio( listener );
+// const sound = new THREE.PositionalAudio( listener );
 
-const audioLoader = new THREE.AudioLoader();
-audioLoader.load( 
-    'sounds/chair.mp3', 
-    function( buffer ) {
-        sound.setBuffer( buffer );
-        sound.setLoop( true );
-        sound.setVolume( 2 );
-        sound.setRefDistance( 1.0 );
-        console.log('Audio loaded successfully');
+// const audioLoader = new THREE.AudioLoader();
+// audioLoader.load( 
+//     'sounds/zavod1.mp3', 
+//     function( buffer ) {
+//         sound.setBuffer( buffer );
+//         sound.setLoop( true );
+//         sound.setVolume( 1 );
+//         sound.setRefDistance( 1.0 );
+//         sound.setMaxDistance( 1.5 );  // Sound becomes inaudible beyond this distance
+//         sound.setRolloffFactor( 1 );  // How quickly sound fades with distance
+//         sound.setDistanceModel( 'inverse' );  // Distance attenuation model
+//         console.log('Audio loaded successfully');
+//     }
+// );
+
+// --- Additional Zavod Sounds ---
+const zavodSounds = [];
+
+// Zavod Sound 1
+const zavodSound1 = new THREE.PositionalAudio(listener);
+zavodSounds.push(zavodSound1);
+const zavodAudioLoader1 = new THREE.AudioLoader();
+zavodAudioLoader1.load(
+    'sounds/zavod1.mp3',
+    function(buffer) {
+        zavodSound1.setBuffer(buffer);
+        zavodSound1.setLoop(true);
+        zavodSound1.setVolume(0.4);
+        zavodSound1.setRefDistance(1.0);
+        zavodSound1.setMaxDistance(2.5);
+        zavodSound1.setRolloffFactor(1);
+        zavodSound1.setDistanceModel('inverse');
+        console.log('Zavod1 audio loaded successfully');
+    }
+);
+
+// Zavod Sound 2
+const zavodSound2 = new THREE.PositionalAudio(listener);
+zavodSounds.push(zavodSound2);
+const zavodAudioLoader2 = new THREE.AudioLoader();
+zavodAudioLoader2.load(
+    'sounds/zavod2.mp3',
+    function(buffer) {
+        zavodSound2.setBuffer(buffer);
+        zavodSound2.setLoop(true);
+        zavodSound2.setVolume(0.4);
+        zavodSound2.setRefDistance(1.0);
+        zavodSound2.setMaxDistance(2.5);
+        zavodSound2.setRolloffFactor(1);
+        zavodSound2.setDistanceModel('inverse');
+        console.log('Zavod2 audio loaded successfully');
+    }
+);
+
+// Zavod Sound 3
+const zavodSound3 = new THREE.PositionalAudio(listener);
+zavodSounds.push(zavodSound3);
+const zavodAudioLoader3 = new THREE.AudioLoader();
+zavodAudioLoader3.load(
+    'sounds/zavod3.mp3',
+    function(buffer) {
+        zavodSound3.setBuffer(buffer);
+        zavodSound3.setLoop(true);
+        zavodSound3.setVolume(0.4);
+        zavodSound3.setRefDistance(1.0);
+        zavodSound3.setMaxDistance(2.5);
+        zavodSound3.setRolloffFactor(1);
+        zavodSound3.setDistanceModel('inverse');
+        console.log('Zavod3 audio loaded successfully');
+    }
+);
+
+// Zavod Sound 4
+const zavodSound4 = new THREE.PositionalAudio(listener);
+zavodSounds.push(zavodSound4);
+const zavodAudioLoader4 = new THREE.AudioLoader();
+zavodAudioLoader4.load(
+    'sounds/zavod4.mp3',
+    function(buffer) {
+        zavodSound4.setBuffer(buffer);
+        zavodSound4.setLoop(true);
+        zavodSound4.setVolume(0.4);
+        zavodSound4.setRefDistance(1.0);
+        zavodSound4.setMaxDistance(1.5);
+        zavodSound4.setRolloffFactor(1);
+        zavodSound4.setDistanceModel('inverse');
+        console.log('Zavod4 audio loaded successfully');
+    }
+);
+
+// Zavod Sound 5
+const zavodSound5 = new THREE.PositionalAudio(listener);
+zavodSounds.push(zavodSound5);
+const zavodAudioLoader5 = new THREE.AudioLoader();
+zavodAudioLoader5.load(
+    'sounds/zavod5.mp3',
+    function(buffer) {
+        zavodSound5.setBuffer(buffer);
+        zavodSound5.setLoop(true);
+        zavodSound5.setVolume(0.3);
+        zavodSound5.setRefDistance(1.0);
+        zavodSound5.setMaxDistance(2.5);
+        zavodSound5.setRolloffFactor(1);
+        zavodSound5.setDistanceModel('inverse');
+        console.log('Zavod5 audio loaded successfully');
+    }
+);
+
+// Zavod Sound 6
+const zavodSound6 = new THREE.PositionalAudio(listener);
+zavodSounds.push(zavodSound6);
+const zavodAudioLoader6 = new THREE.AudioLoader();
+zavodAudioLoader6.load(
+    'sounds/zavod6.mp3',
+    function(buffer) {
+        zavodSound6.setBuffer(buffer);
+        zavodSound6.setLoop(true);
+        zavodSound6.setVolume(0.4);
+        zavodSound6.setRefDistance(1.0);
+        zavodSound6.setMaxDistance(2.5);
+        zavodSound6.setRolloffFactor(1);
+        zavodSound6.setDistanceModel('inverse');
+        console.log('Zavod6 audio loaded successfully');
     }
 );
 
@@ -166,10 +345,20 @@ function startRecording() {
     allChunks = []; // Clear previous recording
     mediaRecorder.start();
     isRecorderVisible = true; // Show recorder
+    recordingControls.innerHTML = `r: запись<br/>
+                p: пауза<br/>
+                f: завершить запись<br/>
+                g: скачать<br/>
+<br/><span style="color: red; font-weight: bold;">Запись...</span>`;
     console.log('Recording started');
   } else if (mediaRecorder.state === 'paused') {
     mediaRecorder.resume();
     isRecorderVisible = true; // Show recorder
+    recordingControls.innerHTML = `r: запись<br/>
+                p: пауза<br/>
+                f: завершить запись<br/>
+                g: скачать<br/>
+<br/><span style="color: red; font-weight: bold;">Запись...</span>`;
     console.log('Recording resumed');
   } else {
     console.log('Already recording');
@@ -180,6 +369,10 @@ function stopRecording() {
   if (mediaRecorder.state === 'recording') {
     mediaRecorder.pause();
     isRecorderVisible = false; // Hide recorder
+    recordingControls.innerHTML = `r: запись<br/>
+                p: пауза<br/>
+                f: завершить запись<br/>
+                g: скачать<br/>`;
     console.log('Recording paused (still accumulating in same file)');
   } else {
     console.log('Recorder not recording');
@@ -189,6 +382,11 @@ function stopRecording() {
 function finalizeRecording() {
   if (mediaRecorder.state !== 'inactive') {
     mediaRecorder.stop();
+    recordingControls.innerHTML = `r: запись<br/>
+                p: пауза<br/>
+                f: завершить запись<br/>
+                g: скачать<br/>
+<br/><span style="color: green; font-weight: bold;">готово к скачиванию</span>`;
     console.log('Recording stopped (finalized)');
   }
 }
@@ -258,7 +456,7 @@ let recorderModel = null; // Will hold the loaded GLB model
 let isRecorderVisible = false;
 let recorderAnimationProgress = 0;
 const recorderHiddenPosition = { x: 0.5, y: -2, z: -1 }; // Hidden below view
-const recorderVisiblePosition = { x: 0.5, y: -0.5, z: -1 }; // In hand position
+const recorderVisiblePosition = { x: 0.5, y: -0.9, z: -1 }; // In hand position
 const recorderAnimationSpeed = 9; // Speed of show/hide animation
 
 // Load recorder GLB model
@@ -280,8 +478,8 @@ loader.load(
         recorderModel.position.set(recorderHiddenPosition.x, recorderHiddenPosition.y, recorderHiddenPosition.z);
         
         // Rotate the model on Z axis
-        recorderModel.rotation.z = Math.PI * 0.1; // 18 degrees rotation
-        recorderModel.rotation.x = Math.PI * 0.25; 
+        recorderModel.rotation.y = -40 // 18 degrees rotation
+        recorderModel.rotation.x = Math.PI * -0.1; 
         recorderModel.scale.set(0.75, 0.75, 0.75);
         console.log('Recorder model loaded successfully');
     },
@@ -302,9 +500,14 @@ document.addEventListener('mousedown', () => {
         listener.context.resume();
     }
     
-    if (!sound.isPlaying) {
-        sound.play();
-    }
+    // Play all zavod sounds
+    zavodSounds.forEach((zavodSound, index) => {
+        if (zavodSound && !zavodSound.isPlaying) {
+            zavodSound.play();
+            console.log(`Playing zavod sound ${index + 1}`);
+        }
+    });
+    
     document.body.requestPointerLock();
     mouseTime = performance.now();
 });
@@ -461,7 +664,7 @@ function animate() {
     // Update recorder animation
     updateRecorderAnimation(deltaTime);
 
-    renderer.render(scene, camera);
+    composer.render();
     requestAnimationFrame(animate)
 }
 
