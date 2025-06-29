@@ -230,7 +230,7 @@ zavodAudioLoader1.load(
     function(buffer) {
         zavodSound1.setBuffer(buffer);
         zavodSound1.setLoop(true);
-        zavodSound1.setVolume(0.4);
+        zavodSound1.setVolume(0.6);
         zavodSound1.setRefDistance(1.0);
         zavodSound1.setMaxDistance(2.5);
         zavodSound1.setRolloffFactor(1);
@@ -248,7 +248,7 @@ zavodAudioLoader2.load(
     function(buffer) {
         zavodSound2.setBuffer(buffer);
         zavodSound2.setLoop(true);
-        zavodSound2.setVolume(0.4);
+        zavodSound2.setVolume(0.6);
         zavodSound2.setRefDistance(1.0);
         zavodSound2.setMaxDistance(2.5);
         zavodSound2.setRolloffFactor(1);
@@ -266,7 +266,7 @@ zavodAudioLoader3.load(
     function(buffer) {
         zavodSound3.setBuffer(buffer);
         zavodSound3.setLoop(true);
-        zavodSound3.setVolume(0.4);
+        zavodSound3.setVolume(0.6);
         zavodSound3.setRefDistance(1.0);
         zavodSound3.setMaxDistance(2.5);
         zavodSound3.setRolloffFactor(1);
@@ -284,7 +284,7 @@ zavodAudioLoader4.load(
     function(buffer) {
         zavodSound4.setBuffer(buffer);
         zavodSound4.setLoop(true);
-        zavodSound4.setVolume(0.4);
+        zavodSound4.setVolume(0.6);
         zavodSound4.setRefDistance(1.0);
         zavodSound4.setMaxDistance(1.5);
         zavodSound4.setRolloffFactor(1);
@@ -302,7 +302,7 @@ zavodAudioLoader5.load(
     function(buffer) {
         zavodSound5.setBuffer(buffer);
         zavodSound5.setLoop(true);
-        zavodSound5.setVolume(0.3);
+        zavodSound5.setVolume(0.6);
         zavodSound5.setRefDistance(1.0);
         zavodSound5.setMaxDistance(2.5);
         zavodSound5.setRolloffFactor(1);
@@ -320,7 +320,7 @@ zavodAudioLoader6.load(
     function(buffer) {
         zavodSound6.setBuffer(buffer);
         zavodSound6.setLoop(true);
-        zavodSound6.setVolume(0.4);
+        zavodSound6.setVolume(0.6);
         zavodSound6.setRefDistance(1.0);
         zavodSound6.setMaxDistance(2.5);
         zavodSound6.setRolloffFactor(1);
