@@ -15,8 +15,8 @@ const instructions = document.getElementById('instructions');
 const recordingControls = document.getElementById('recording-controls');
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color('#262837');
-const fog = new THREE.Fog('#262837', 5, 50)
+scene.background = new THREE.Color('#4a5a6c'); // Brighter sky color
+const fog = new THREE.FogExp2('#4a5a6c', 0.035) // More realistic exponential fog with higher density for less visibility
 scene.fog = fog
 
 const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -231,7 +231,7 @@ zavodAudioLoader1.load(
         zavodSound1.setBuffer(buffer);
         zavodSound1.setLoop(true);
         zavodSound1.setVolume(0.6);
-        zavodSound1.setRefDistance(1.0);
+        zavodSound1.setRefDistance(2.0);
         zavodSound1.setMaxDistance(2.5);
         zavodSound1.setRolloffFactor(1);
         zavodSound1.setDistanceModel('inverse');
@@ -249,7 +249,7 @@ zavodAudioLoader2.load(
         zavodSound2.setBuffer(buffer);
         zavodSound2.setLoop(true);
         zavodSound2.setVolume(0.6);
-        zavodSound2.setRefDistance(1.0);
+        zavodSound2.setRefDistance(2.0);
         zavodSound2.setMaxDistance(2.5);
         zavodSound2.setRolloffFactor(1);
         zavodSound2.setDistanceModel('inverse');
@@ -267,7 +267,7 @@ zavodAudioLoader3.load(
         zavodSound3.setBuffer(buffer);
         zavodSound3.setLoop(true);
         zavodSound3.setVolume(0.6);
-        zavodSound3.setRefDistance(1.0);
+        zavodSound3.setRefDistance(2.0);
         zavodSound3.setMaxDistance(2.5);
         zavodSound3.setRolloffFactor(1);
         zavodSound3.setDistanceModel('inverse');
@@ -285,7 +285,7 @@ zavodAudioLoader4.load(
         zavodSound4.setBuffer(buffer);
         zavodSound4.setLoop(true);
         zavodSound4.setVolume(0.6);
-        zavodSound4.setRefDistance(1.0);
+        zavodSound4.setRefDistance(2.0);
         zavodSound4.setMaxDistance(1.5);
         zavodSound4.setRolloffFactor(1);
         zavodSound4.setDistanceModel('inverse');
@@ -303,7 +303,7 @@ zavodAudioLoader5.load(
         zavodSound5.setBuffer(buffer);
         zavodSound5.setLoop(true);
         zavodSound5.setVolume(0.6);
-        zavodSound5.setRefDistance(1.0);
+        zavodSound5.setRefDistance(2.0);
         zavodSound5.setMaxDistance(2.5);
         zavodSound5.setRolloffFactor(1);
         zavodSound5.setDistanceModel('inverse');
@@ -321,7 +321,7 @@ zavodAudioLoader6.load(
         zavodSound6.setBuffer(buffer);
         zavodSound6.setLoop(true);
         zavodSound6.setVolume(0.6);
-        zavodSound6.setRefDistance(1.0);
+        zavodSound6.setRefDistance(2.0);
         zavodSound6.setMaxDistance(2.5);
         zavodSound6.setRolloffFactor(1);
         zavodSound6.setDistanceModel('inverse');
