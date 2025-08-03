@@ -102,6 +102,103 @@ dirLight3.shadow.camera.far = 180;
 scene.add(dirLight3);
 
 
+// --- Dust Particle System ---
+const dustParticles = [];
+const dustGeometry = new THREE.SphereGeometry(0.02, 8, 8);
+const dustMaterial = new THREE.MeshBasicMaterial({ 
+    color: 0xcccccc, 
+    transparent: true, 
+    opacity: 0.3 
+});
+
+// Create dust particles - adjusted for larger map coverage
+const dustCount = 200;
+for (let i = 0; i < dustCount; i++) {
+    const dustParticle = new THREE.Mesh(dustGeometry, dustMaterial);
+    
+    // Equal coverage on X and Z axes
+    dustParticle.position.set(
+        (Math.random() - 0.5) * 230, // X: -115 to +115 (230 units coverage)
+        Math.random() * 20 + 2,      // Y: 2 to 22 units high
+        (Math.random() - 0.5) * 230  // Z: -115 to +115 (230 units coverage)
+    );
+    
+    // Store initial position and movement properties with enhanced horizontal motion
+    dustParticle.userData = {
+        originalY: dustParticle.position.y,
+        originalX: dustParticle.position.x,
+        originalZ: dustParticle.position.z,
+        floatSpeed: Math.random() * 0.5 + 0.2,
+        floatOffset: Math.random() * Math.PI * 2,
+        driftX: (Math.random() - 0.5) * 0.8,      // Increased horizontal drift
+        driftZ: (Math.random() - 0.5) * 0.8,      // Increased horizontal drift
+        bobRange: Math.random() * 0.8 + 0.4,
+        horizontalRange: Math.random() * 3 + 2,   // How far they drift horizontally
+        horizontalSpeed: Math.random() * 0.3 + 0.1, // Speed of horizontal oscillation
+        horizontalOffsetX: Math.random() * Math.PI * 2,
+        horizontalOffsetZ: Math.random() * Math.PI * 2
+    };
+    
+    scene.add(dustParticle);
+    dustParticles.push(dustParticle);
+}
+
+function updateDustParticles(deltaTime) {
+    const time = performance.now() * 0.001;
+    
+    dustParticles.forEach(particle => {
+        const userData = particle.userData;
+        
+        // Gentle floating motion (vertical)
+        particle.position.y = userData.originalY + 
+            Math.sin(time * userData.floatSpeed + userData.floatOffset) * userData.bobRange;
+        
+        // Enhanced horizontal movement - oscillating drift pattern
+        particle.position.x = userData.originalX + 
+            Math.sin(time * userData.horizontalSpeed + userData.horizontalOffsetX) * userData.horizontalRange +
+            userData.driftX * time * 0.5; // Slow constant drift
+            
+        particle.position.z = userData.originalZ + 
+            Math.cos(time * userData.horizontalSpeed + userData.horizontalOffsetZ) * userData.horizontalRange +
+            userData.driftZ * time * 0.5; // Slow constant drift
+        
+        // Fade particles based on distance from camera
+        const distanceToCamera = particle.position.distanceTo(camera.position);
+        const maxDistance = 35; // Increased visibility range for larger map
+        const fadeStart = 25;   // Start fading later
+        
+        if (distanceToCamera > fadeStart) {
+            const fadeAmount = Math.max(0, 1 - (distanceToCamera - fadeStart) / (maxDistance - fadeStart));
+            particle.material.opacity = 0.3 * fadeAmount;
+        } else {
+            particle.material.opacity = 0.3;
+        }
+        
+        // Reset particles that drift too far from their original position or camera
+        const driftDistance = new THREE.Vector3(userData.originalX, userData.originalY, userData.originalZ)
+            .distanceTo(particle.position);
+        
+        if (distanceToCamera > maxDistance || driftDistance > 15) {
+            // Respawn particle closer to player but within map bounds
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.random() * 15 + 8;
+            const newX = camera.position.x + Math.cos(angle) * distance;
+            const newZ = camera.position.z + Math.sin(angle) * distance;
+            
+            // Clamp to map boundaries
+            particle.position.x = Math.max(-100, Math.min(100, newX));
+            particle.position.z = Math.max(-100, Math.min(100, newZ));
+            particle.position.y = camera.position.y + (Math.random() - 0.5) * 15 + 5;
+            
+            // Reset original positions
+            userData.originalX = particle.position.x;
+            userData.originalY = particle.position.y;
+            userData.originalZ = particle.position.z;
+        }
+    });
+}
+
+
 // --- World & Collision Setup ---
 
 const manager = new THREE.LoadingManager(
@@ -456,7 +553,7 @@ let recorderModel = null; // Will hold the loaded GLB model
 let isRecorderVisible = false;
 let recorderAnimationProgress = 0;
 const recorderHiddenPosition = { x: 0.5, y: -2, z: -1 }; // Hidden below view
-const recorderVisiblePosition = { x: 0.5, y: -0.9, z: -1 }; // In hand position
+const recorderVisiblePosition = { x: 0.3, y: -0.9, z: -1 }; // In hand position
 const recorderAnimationSpeed = 9; // Speed of show/hide animation
 
 // Load recorder GLB model
@@ -663,6 +760,9 @@ function animate() {
     
     // Update recorder animation
     updateRecorderAnimation(deltaTime);
+    
+    // Update dust particles
+    updateDustParticles(deltaTime);
 
     composer.render();
     requestAnimationFrame(animate)
