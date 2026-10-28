@@ -16,6 +16,11 @@ html, body {
   font-family: 'Druk';
 }
 
+button {
+  color: inherit;
+  font: inherit;
+}
+
 h1 {
   color: #ffffff;
   margin: 10px;
@@ -26,11 +31,11 @@ h1 {
   width: 100%;
   height: 100%;
   background-color: rgba(0,0,0,0.5);
+  z-index: 1;
 }
 
 #instructions {
   font-family: "Druk";
-    font-size: 40px;
   width: 100%;
   height: 100%;
 
@@ -42,6 +47,101 @@ h1 {
   text-align: center;
   font-size: 14px;
   cursor: pointer;
+}
+
+.game-goal {
+  max-width: min(680px, calc(100% - 40px));
+  margin-top: 20px;
+  font-size: 20px;
+}
+
+.start-hint {
+  margin-top: 20px;
+}
+
+#menu-controls {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 2;
+  display: flex;
+  gap: 8px;
+}
+
+#menu-controls button,
+#about-close {
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 3px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.7);
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 14px;
+}
+
+#menu-controls button:hover,
+#about-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+#about-dialog {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  left: 50%;
+  width: min(620px, calc(100% - 48px));
+  max-height: calc(100% - 120px);
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 32px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  background: rgba(0, 0, 0, 0.94);
+  font-family: monospace;
+  line-height: 1.6;
+  cursor: default;
+}
+
+#about-dialog[hidden] {
+  display: none;
+}
+
+#about-dialog h2 {
+  margin: 0 40px 16px 0;
+  font-family: "Druk";
+  font-size: 28px;
+  font-weight: normal;
+}
+
+#about-dialog a,
+#about-dialog a:visited {
+  color: #ffffff;
+}
+
+#about-dialog a:hover,
+#about-dialog a:focus-visible {
+  color: #d0d0d0;
+}
+
+#about-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 4px 10px;
+  font-size: 20px;
+}
+
+#recording-controls {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+  padding: 10px;
+  border-radius: 5px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-family: monospace;
+  font-size: 14px;
 }
 
 #loading-screen {
@@ -123,6 +223,26 @@ h1 {
         -ms-transform: rotate(360deg);
         transform: rotate(360deg);
     }
+}
+
+@media (max-width: 600px) {
+  #instructions #game-title {
+    font-size: 48px !important;
+  }
+
+  #instructions {
+    padding: 70px 20px 20px;
+    box-sizing: border-box;
+    overflow: auto;
+  }
+
+  .game-goal {
+    font-size: 16px;
+  }
+
+  #about-dialog {
+    padding: 24px;
+  }
 }
 
 .webgl {

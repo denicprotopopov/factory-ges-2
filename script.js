@@ -13,6 +13,90 @@ const canvas = document.querySelector('canvas.webgl');
 const blocker = document.getElementById('blocker');
 const instructions = document.getElementById('instructions');
 const recordingControls = document.getElementById('recording-controls');
+const recordingShortcuts = document.getElementById('recording-shortcuts');
+const languageToggle = document.getElementById('language-toggle');
+const aboutButton = document.getElementById('about-button');
+const aboutDialog = document.getElementById('about-dialog');
+const aboutClose = document.getElementById('about-close');
+
+const interfaceText = {
+    en: {
+        browserNote: 'For the best experience, use a Chromium-based browser.',
+        gameGoal: 'Make your own sound collage: find objects connected to industrial history and record what they sound like.',
+        startHint: 'Click the left mouse button to begin',
+        controls: 'Movement: WASD<br/>Look: Mouse<br/><br/>Audio recording:<br/>r: record<br/>p: pause<br/>f: finish recording<br/>g: download',
+        recording: 'record',
+        pause: 'pause',
+        finish: 'finish recording',
+        download: 'download',
+        recordingStatus: 'Recording...',
+        readyStatus: 'Ready to download',
+        languageButton: 'РУС',
+        languageLabel: 'Switch language to Russian',
+        aboutButton: 'About',
+    },
+    ru: {
+        browserNote: 'Для наилучшего опыта используйте браузер на базе Chromium.',
+        gameGoal: 'Соберите собственный звуковой коллаж: найдите объекты, связанные с индустриальной историей, и запишите, как они звучат.',
+        startHint: 'Нажмите левую кнопку мыши, чтобы начать',
+        controls: 'Движение: WASD<br/>Осмотр: мышь<br/><br/>Запись звука:<br/>r: запись<br/>p: пауза<br/>f: завершить запись<br/>g: скачать',
+        recording: 'запись',
+        pause: 'пауза',
+        finish: 'завершить запись',
+        download: 'скачать',
+        recordingStatus: 'Запись...',
+        readyStatus: 'Готово к скачиванию',
+        languageButton: 'ENG',
+        languageLabel: 'Переключить язык на английский',
+        aboutButton: 'О проекте',
+    },
+};
+
+let currentLanguage = 'en';
+let recordingStatus = '';
+
+function renderRecordingControls() {
+    const text = interfaceText[currentLanguage];
+    const status = recordingStatus
+        ? `<br/><span style="color: ${recordingStatus === 'recording' ? 'red' : 'green'}; font-weight: bold;">${text[recordingStatus === 'recording' ? 'recordingStatus' : 'readyStatus']}</span>`
+        : '';
+    recordingShortcuts.innerHTML = `r: ${text.recording}<br/>
+p: ${text.pause}<br/>
+f: ${text.finish}<br/>
+g: ${text.download}${status}`;
+}
+
+function setLanguage(language) {
+    currentLanguage = language;
+    const text = interfaceText[language];
+    document.documentElement.lang = language;
+    document.getElementById('browser-note').textContent = text.browserNote;
+    document.getElementById('game-goal').textContent = text.gameGoal;
+    document.getElementById('start-hint').textContent = text.startHint;
+    document.getElementById('control-hints').innerHTML = text.controls;
+    languageToggle.textContent = text.languageButton;
+    languageToggle.setAttribute('aria-label', text.languageLabel);
+    aboutButton.textContent = text.aboutButton;
+    aboutButton.hidden = language !== 'en';
+    if (language !== 'en') {
+        aboutDialog.hidden = true;
+    }
+    renderRecordingControls();
+}
+
+languageToggle.addEventListener('click', () => {
+    setLanguage(currentLanguage === 'en' ? 'ru' : 'en');
+});
+
+aboutButton.addEventListener('click', () => {
+    aboutDialog.hidden = false;
+});
+
+aboutClose.addEventListener('click', () => {
+    aboutDialog.hidden = true;
+});
+
+setLanguage(currentLanguage);
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#4a5a6c'); // Brighter sky color
@@ -442,20 +526,14 @@ function startRecording() {
     allChunks = []; // Clear previous recording
     mediaRecorder.start();
     isRecorderVisible = true; // Show recorder
-    recordingControls.innerHTML = `r: запись<br/>
-                p: пауза<br/>
-                f: завершить запись<br/>
-                g: скачать<br/>
-<br/><span style="color: red; font-weight: bold;">Запись...</span>`;
+    recordingStatus = 'recording';
+    renderRecordingControls();
     console.log('Recording started');
   } else if (mediaRecorder.state === 'paused') {
     mediaRecorder.resume();
     isRecorderVisible = true; // Show recorder
-    recordingControls.innerHTML = `r: запись<br/>
-                p: пауза<br/>
-                f: завершить запись<br/>
-                g: скачать<br/>
-<br/><span style="color: red; font-weight: bold;">Запись...</span>`;
+    recordingStatus = 'recording';
+    renderRecordingControls();
     console.log('Recording resumed');
   } else {
     console.log('Already recording');
@@ -466,10 +544,8 @@ function stopRecording() {
   if (mediaRecorder.state === 'recording') {
     mediaRecorder.pause();
     isRecorderVisible = false; // Hide recorder
-    recordingControls.innerHTML = `r: запись<br/>
-                p: пауза<br/>
-                f: завершить запись<br/>
-                g: скачать<br/>`;
+    recordingStatus = '';
+    renderRecordingControls();
     console.log('Recording paused (still accumulating in same file)');
   } else {
     console.log('Recorder not recording');
@@ -479,11 +555,8 @@ function stopRecording() {
 function finalizeRecording() {
   if (mediaRecorder.state !== 'inactive') {
     mediaRecorder.stop();
-    recordingControls.innerHTML = `r: запись<br/>
-                p: пауза<br/>
-                f: завершить запись<br/>
-                g: скачать<br/>
-<br/><span style="color: green; font-weight: bold;">готово к скачиванию</span>`;
+    recordingStatus = 'ready';
+    renderRecordingControls();
     console.log('Recording stopped (finalized)');
   }
 }
@@ -591,7 +664,11 @@ loader.load(
 // --- Event Listeners for Controls ---
 
 // Pointer lock for first-person view
-document.addEventListener('mousedown', () => {
+document.addEventListener('mousedown', (event) => {
+    if (event.target.closest('#menu-controls, #about-dialog, #recording-controls')) {
+        return;
+    }
+
     // Resume audio context if suspended
     if (listener.context.state === 'suspended') {
         listener.context.resume();
